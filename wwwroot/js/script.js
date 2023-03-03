@@ -4,13 +4,16 @@ var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").build();
 
 connection.on("newMessage", console.log);
 
-connection.on("newStroke", (x, y) => {
-    //console.log(x, y);
+let prevOtherMouseX, prevOtherMouseY
 
-    ctx.lineTo(x, y); // creating line according to the mouse pointer
+connection.on("newStroke", (currentX, currentY, previousX, previousY) => {
+    //console.log(currentX, currentY);
+
+    //ctx.beginPath(); // creating new path to draw
+    ctx.moveTo(previousX, previousY);
+    ctx.lineTo(currentX, currentY); // creating line according to the mouse pointer
     ctx.stroke(); // drawing/filling line with color
 })
-
 
 connection.start().catch(err => console.error(err.toString()));
 
@@ -75,6 +78,8 @@ const startDraw = (e) => {
     isDrawing = true;
     prevMouseX = e.offsetX; // passing current mouseX position as prevMouseX value
     prevMouseY = e.offsetY; // passing current mouseY position as prevMouseY value
+    prevOtherMouseX = e.offsetX;
+    prevOtherMouseY = e.offsetY;
     ctx.beginPath(); // creating new path to draw
     ctx.lineWidth = brushWidth; // passing brushSize as line width
     ctx.strokeStyle = selectedColor; // passing selectedColor as stroke style
@@ -94,7 +99,11 @@ const drawing = (e) => {
         ctx.lineTo(e.offsetX, e.offsetY); // creating line according to the mouse pointer
         ctx.stroke(); // drawing/filling line with color
 
-        connection.invoke("NewStroke", e.offsetX, e.offsetY);
+        //connection.invoke("NewStroke", e.offsetX, e.offsetY);
+        connection.invoke("NewStroke", e.offsetX, e.offsetY, prevOtherMouseX, prevOtherMouseY);
+
+        prevOtherMouseX = e.offsetX;
+        prevOtherMouseY = e.offsetY;
     } else if(selectedTool === "rectangle"){
         drawRect(e);
     } else if(selectedTool === "circle"){

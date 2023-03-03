@@ -21,9 +21,14 @@ namespace DrawingApp.Hubs
         //    await Clients.Others.SendAsync("newStroke", start, end);
         //}
 
-        public async Task NewStroke(int x, int y)
+        //public async Task NewStroke(int x, int y)
+        //{
+        //    await Clients.Others.SendAsync("newStroke", x, y);
+        //}
+
+        public async Task NewStroke(int currentX, int currentY, int previousX, int previousY)
         {
-            await Clients.Others.SendAsync("newStroke", x, y);
+            await Clients.Others.SendAsync("newStroke", currentX, currentY, previousX, previousY);
         }
     }
 }
