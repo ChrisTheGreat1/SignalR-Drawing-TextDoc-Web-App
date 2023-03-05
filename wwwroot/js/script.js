@@ -93,8 +93,8 @@ const startDraw = (e) => {
     isDrawing = true;
     prevMouseX = e.offsetX; // passing current mouseX position as prevMouseX value
     prevMouseY = e.offsetY; // passing current mouseY position as prevMouseY value
-    clientPrevMouseX = e.offsetX;
-    clientPrevMouseY = e.offsetY;
+    //clientPrevMouseX = e.offsetX;
+    //clientPrevMouseY = e.offsetY;
     ctx.beginPath(); // creating new path to draw
     ctx.lineWidth = brushWidth; // passing brushSize as line width
     ctx.strokeStyle = selectedColor; // passing selectedColor as stroke style
@@ -117,8 +117,8 @@ const drawing = (e) => {
         //clientPrevMouseX = e.offsetX;
         //clientPrevMouseY = e.offsetY;
 
-        mouseX = e.offsetX;
-        mouseY = e.offsetY;
+        //mouseX = e.offsetX;
+        //mouseY = e.offsetY;
 
         ctx.lineTo(e.offsetX, e.offsetY); // creating line according to the mouse pointer
         //ctx.lineTo(mouseX, mouseY);
@@ -135,10 +135,10 @@ const drawing = (e) => {
         //};
 
         let strokeTool = {
-            MousePosX: mouseX,
-            MousePosY: mouseY,
-            MousePreviousPosX: clientPrevMouseX,
-            MousePreviousPosY: clientPrevMouseY,
+            MousePosX: e.offsetX,
+            MousePosY: e.offsetY,
+            //MousePreviousPosX: clientPrevMouseX,
+            //MousePreviousPosY: clientPrevMouseY,
             LineWidth: Number(brushWidth),
             StrokeStyle: ctx.strokeStyle,
             FillStyle: ctx.strokeStyle
@@ -154,8 +154,8 @@ const drawing = (e) => {
         */
         //clientPrevMouseX = e.offsetX;
         //clientPrevMouseY = e.offsetY;
-        clientPrevMouseX = mouseX;
-        clientPrevMouseY = mouseY;
+        //clientPrevMouseX = mouseX;
+        //clientPrevMouseY = mouseY;
 
     } else if(selectedTool === "rectangle"){
         drawRect(e);

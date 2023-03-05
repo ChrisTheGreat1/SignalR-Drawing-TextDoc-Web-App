@@ -24,5 +24,10 @@ namespace DrawingApp.Hubs
         {
             await Clients.Others.SendAsync("startNewStroke", startingCoordinates);
         }
+
+        public async Task DrawCircle(StrokeTool strokeTool)
+        {
+            await Clients.Others.SendAsync("drawCircle", strokeTool);
+        }
     }
 }
