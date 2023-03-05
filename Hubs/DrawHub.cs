@@ -1,6 +1,4 @@
-﻿using DrawingApp.Models;
-using Microsoft.AspNetCore.SignalR;
-using System.Drawing;
+﻿using Microsoft.AspNetCore.SignalR;
 
 namespace DrawingApp.Hubs
 {
@@ -16,19 +14,9 @@ namespace DrawingApp.Hubs
             await Clients.All.SendAsync("newMessage", message);
         }
 
-        //public async Task NewStroke(DrawingPoint start, DrawingPoint end)
-        //{
-        //    await Clients.Others.SendAsync("newStroke", start, end);
-        //}
-
-        //public async Task NewStroke(int x, int y)
-        //{
-        //    await Clients.Others.SendAsync("newStroke", x, y);
-        //}
-
-        public async Task NewStroke(int currentX, int currentY, int previousX, int previousY)
+        public async Task NewStroke(DrawingCoordinates coordinates)
         {
-            await Clients.Others.SendAsync("newStroke", currentX, currentY, previousX, previousY);
+            await Clients.Others.SendAsync("newStroke", coordinates);
         }
     }
 }

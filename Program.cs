@@ -11,7 +11,11 @@ namespace DrawingApp
             // Add services to the container.
             builder.Services.AddRazorPages();
 
-            builder.Services.AddSignalR();
+            builder.Services
+                .AddSignalR()
+                .AddJsonProtocol(options => { options.PayloadSerializerOptions.PropertyNamingPolicy = null; });
+
+            //builder.Services.AddSignalR();
 
             var app = builder.Build();
 

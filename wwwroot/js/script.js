@@ -1,17 +1,14 @@
 "use strict";
 
-var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").build();
+var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").withAutomaticReconnect().build();
+//var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").build();
 
 connection.on("newMessage", console.log);
 
-let prevOtherMouseX, prevOtherMouseY
-
-connection.on("newStroke", (currentX, currentY, previousX, previousY) => {
-    //console.log(currentX, currentY);
-
-    //ctx.beginPath(); // creating new path to draw
-    ctx.moveTo(previousX, previousY);
-    ctx.lineTo(currentX, currentY); // creating line according to the mouse pointer
+connection.on("newStroke", (coordinates) => {
+    //console.dir(coordinates);
+    ctx.moveTo(coordinates.MousePreviousPosX, coordinates.MousePreviousPosY);
+    ctx.lineTo(coordinates.MousePosX, coordinates.MousePosY); // creating line according to the mouse pointer
     ctx.stroke(); // drawing/filling line with color
 })
 
@@ -28,7 +25,7 @@ saveImg = document.querySelector(".save-img"),
 ctx = canvas.getContext("2d");
 
 // global variables with default value
-let prevMouseX, prevMouseY, snapshot,
+let prevMouseX, prevMouseY, snapshot, clientPrevMouseX, clientPrevMouseY,
 isDrawing = false,
 selectedTool = "brush",
 brushWidth = 5,
@@ -78,8 +75,8 @@ const startDraw = (e) => {
     isDrawing = true;
     prevMouseX = e.offsetX; // passing current mouseX position as prevMouseX value
     prevMouseY = e.offsetY; // passing current mouseY position as prevMouseY value
-    prevOtherMouseX = e.offsetX;
-    prevOtherMouseY = e.offsetY;
+    clientPrevMouseX = e.offsetX;
+    clientPrevMouseY = e.offsetY;
     ctx.beginPath(); // creating new path to draw
     ctx.lineWidth = brushWidth; // passing brushSize as line width
     ctx.strokeStyle = selectedColor; // passing selectedColor as stroke style
@@ -99,11 +96,22 @@ const drawing = (e) => {
         ctx.lineTo(e.offsetX, e.offsetY); // creating line according to the mouse pointer
         ctx.stroke(); // drawing/filling line with color
 
-        //connection.invoke("NewStroke", e.offsetX, e.offsetY);
-        connection.invoke("NewStroke", e.offsetX, e.offsetY, prevOtherMouseX, prevOtherMouseY);
+        var coordinates = {
+            MousePosX: e.offsetX,
+            MousePosY: e.offsetY,
+            MousePreviousPosX: clientPrevMouseX,
+            MousePreviousPosY: clientPrevMouseY
+        };
 
-        prevOtherMouseX = e.offsetX;
-        prevOtherMouseY = e.offsetY;
+        connection.invoke("NewStroke", coordinates);
+
+        /*
+        Update previous mouse positions to most recent position, 
+        otherwise line gets drawn across the screen to new starting point
+        */
+        clientPrevMouseX = e.offsetX; 
+        clientPrevMouseY = e.offsetY;
+
     } else if(selectedTool === "rectangle"){
         drawRect(e);
     } else if(selectedTool === "circle"){
