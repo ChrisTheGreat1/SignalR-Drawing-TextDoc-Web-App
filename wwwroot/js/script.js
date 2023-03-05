@@ -4,30 +4,50 @@ var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").withAuto
 
 connection.on("newMessage", console.log);
 
-connection.on("startNewStroke", (startingCoordinates) => {
-    //console.log("new coordinates received");
-    //console.dir(startingCoordinates);
+//connection.on("startNewStroke", (startingCoordinates) => {
+//    //console.log("new coordinates received");
+//    //console.dir(startingCoordinates);
 
+//    ctx.beginPath();
+//    ctx.moveTo(startingCoordinates.StartPosX, startingCoordinates.StartPosY);
+//});
+
+connection.on("initializeNewStroke", (newStrokeObject) => {
     ctx.beginPath();
-    ctx.moveTo(startingCoordinates.StartPosX, startingCoordinates.StartPosY);
+    ctx.lineWidth = newStrokeObject.LineWidth;
+    ctx.strokeStyle = newStrokeObject.StrokeStyle;
+    ctx.fillStyle = newStrokeObject.FillStyle;
+    ctx.moveTo(newStrokeObject.StartPosX, newStrokeObject.StartPosY);
+    snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height); 
 });
 
 connection.on("drawStroke", (strokeTool) => {
+    ctx.putImageData(snapshot, 0, 0); 
+
     //console.dir(strokeTool);
 
     //ctx.beginPath();
 
-    ctx.lineWidth = strokeTool.LineWidth;
+    //ctx.lineWidth = strokeTool.LineWidth;
     ctx.strokeStyle = strokeTool.StrokeStyle;
-    ctx.fillStyle = strokeTool.FillStyle;
+    //ctx.fillStyle = strokeTool.FillStyle;
 
-    //ctx.moveTo(strokeTool.MousePosX, strokeTool.MousePosY);
-    //ctx.moveTo(strokeTool.MousePreviousPosX, strokeTool.MousePreviousPosY);
     ctx.lineTo(strokeTool.MousePosX, strokeTool.MousePosY); 
     ctx.stroke(); 
 
     //ctx.closePath();
 
+})
+
+connection.on("drawCircle", (circle) => {
+    ctx.putImageData(snapshot, 0, 0); // adding copied canvas data on to this canvas
+
+    //console.dir(circle);
+
+    ctx.beginPath(); // creating new path to draw circle
+    let radius = circle.Radius;
+    ctx.arc(circle.MousePreviousPosX, circle.MousePreviousPosY, radius, 0, 2 * Math.PI); // creating circle according to the mouse pointer
+    circle.FillColor ? ctx.fill() : ctx.stroke(); // if fillColor is checked fill circle else draw border circle
 })
 
 connection.start().catch(err => console.error(err.toString()));
@@ -78,6 +98,15 @@ const drawCircle = (e) => {
     let radius = Math.sqrt(Math.pow((prevMouseX - e.offsetX), 2) + Math.pow((prevMouseY - e.offsetY), 2));
     ctx.arc(prevMouseX, prevMouseY, radius, 0, 2 * Math.PI); // creating circle according to the mouse pointer
     fillColor.checked ? ctx.fill() : ctx.stroke(); // if fillColor is checked fill circle else draw border circle
+
+    let circle = {
+        MousePreviousPosX: prevMouseX,
+        MousePreviousPosY: prevMouseY,
+        Radius: radius,
+        FillColor: fillColor.checked
+    }
+
+    connection.invoke("DrawCircle", circle);
 }
 
 const drawTriangle = (e) => {
@@ -102,7 +131,16 @@ const startDraw = (e) => {
     // copying canvas data & passing as snapshot value.. this avoids dragging the image
     snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    connection.invoke("StartNewStroke", { StartPosX: e.offsetX, StartPosY: e.offsetY });
+    let newStrokeObject = {
+        StartPosX: e.offsetX,
+        StartPosY: e.offsetY,
+        LineWidth: Number(brushWidth),
+        StrokeStyle: ctx.strokeStyle,
+        FillStyle: ctx.strokeStyle
+    }
+
+    //connection.invoke("StartNewStroke", { StartPosX: e.offsetX, StartPosY: e.offsetY });
+    connection.invoke("InitializeNewStroke", newStrokeObject);
 }
 
 const drawing = (e) => {
@@ -137,14 +175,8 @@ const drawing = (e) => {
         let strokeTool = {
             MousePosX: e.offsetX,
             MousePosY: e.offsetY,
-            //MousePreviousPosX: clientPrevMouseX,
-            //MousePreviousPosY: clientPrevMouseY,
-            LineWidth: Number(brushWidth),
-            StrokeStyle: ctx.strokeStyle,
-            FillStyle: ctx.strokeStyle
+            StrokeStyle: ctx.strokeStyle
         };
-
-        //console.dir(strokeTool);
 
         connection.invoke("DrawStroke", strokeTool);
 
