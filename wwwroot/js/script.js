@@ -1,15 +1,33 @@
 "use strict";
 
 var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").withAutomaticReconnect().build();
-//var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").build();
 
 connection.on("newMessage", console.log);
 
-connection.on("newStroke", (coordinates) => {
-    //console.dir(coordinates);
-    ctx.moveTo(coordinates.MousePreviousPosX, coordinates.MousePreviousPosY);
-    ctx.lineTo(coordinates.MousePosX, coordinates.MousePosY); // creating line according to the mouse pointer
-    ctx.stroke(); // drawing/filling line with color
+connection.on("startNewStroke", (startingCoordinates) => {
+    //console.log("new coordinates received");
+    //console.dir(startingCoordinates);
+
+    ctx.beginPath();
+    ctx.moveTo(startingCoordinates.StartPosX, startingCoordinates.StartPosY);
+});
+
+connection.on("drawStroke", (strokeTool) => {
+    //console.dir(strokeTool);
+
+    //ctx.beginPath();
+
+    ctx.lineWidth = strokeTool.LineWidth;
+    ctx.strokeStyle = strokeTool.StrokeStyle;
+    ctx.fillStyle = strokeTool.FillStyle;
+
+    //ctx.moveTo(strokeTool.MousePosX, strokeTool.MousePosY);
+    //ctx.moveTo(strokeTool.MousePreviousPosX, strokeTool.MousePreviousPosY);
+    ctx.lineTo(strokeTool.MousePosX, strokeTool.MousePosY); 
+    ctx.stroke(); 
+
+    //ctx.closePath();
+
 })
 
 connection.start().catch(err => console.error(err.toString()));
@@ -25,7 +43,7 @@ saveImg = document.querySelector(".save-img"),
 ctx = canvas.getContext("2d");
 
 // global variables with default value
-let prevMouseX, prevMouseY, snapshot, clientPrevMouseX, clientPrevMouseY,
+let prevMouseX, prevMouseY, snapshot, clientPrevMouseX, clientPrevMouseY, mouseX, mouseY,
 isDrawing = false,
 selectedTool = "brush",
 brushWidth = 5,
@@ -83,6 +101,8 @@ const startDraw = (e) => {
     ctx.fillStyle = selectedColor; // passing selectedColor as fill style
     // copying canvas data & passing as snapshot value.. this avoids dragging the image
     snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    connection.invoke("StartNewStroke", { StartPosX: e.offsetX, StartPosY: e.offsetY });
 }
 
 const drawing = (e) => {
@@ -93,24 +113,49 @@ const drawing = (e) => {
         // if selected tool is eraser then set strokeStyle to white 
         // to paint white color on to the existing canvas content else set the stroke color to selected color
         ctx.strokeStyle = selectedTool === "eraser" ? "#fff" : selectedColor;
+
+        //clientPrevMouseX = e.offsetX;
+        //clientPrevMouseY = e.offsetY;
+
+        mouseX = e.offsetX;
+        mouseY = e.offsetY;
+
         ctx.lineTo(e.offsetX, e.offsetY); // creating line according to the mouse pointer
+        //ctx.lineTo(mouseX, mouseY);
         ctx.stroke(); // drawing/filling line with color
 
-        var coordinates = {
-            MousePosX: e.offsetX,
-            MousePosY: e.offsetY,
+        //let strokeTool = {
+        //    MousePosX: e.offsetX,
+        //    MousePosY: e.offsetY,
+        //    MousePreviousPosX: clientPrevMouseX,
+        //    MousePreviousPosY: clientPrevMouseY,
+        //    LineWidth: Number(brushWidth),
+        //    StrokeStyle: ctx.strokeStyle,
+        //    FillStyle: ctx.strokeStyle
+        //};
+
+        let strokeTool = {
+            MousePosX: mouseX,
+            MousePosY: mouseY,
             MousePreviousPosX: clientPrevMouseX,
-            MousePreviousPosY: clientPrevMouseY
+            MousePreviousPosY: clientPrevMouseY,
+            LineWidth: Number(brushWidth),
+            StrokeStyle: ctx.strokeStyle,
+            FillStyle: ctx.strokeStyle
         };
 
-        connection.invoke("NewStroke", coordinates);
+        //console.dir(strokeTool);
+
+        connection.invoke("DrawStroke", strokeTool);
 
         /*
         Update previous mouse positions to most recent position, 
         otherwise line gets drawn across the screen to new starting point
         */
-        clientPrevMouseX = e.offsetX; 
-        clientPrevMouseY = e.offsetY;
+        //clientPrevMouseX = e.offsetX;
+        //clientPrevMouseY = e.offsetY;
+        clientPrevMouseX = mouseX;
+        clientPrevMouseY = mouseY;
 
     } else if(selectedTool === "rectangle"){
         drawRect(e);

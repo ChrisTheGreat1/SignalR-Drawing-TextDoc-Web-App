@@ -15,8 +15,6 @@ namespace DrawingApp
                 .AddSignalR()
                 .AddJsonProtocol(options => { options.PayloadSerializerOptions.PropertyNamingPolicy = null; });
 
-            //builder.Services.AddSignalR();
-
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using static DrawingApp.Hubs.DrawingObjects;
 
 namespace DrawingApp.Hubs
 {
@@ -14,9 +15,14 @@ namespace DrawingApp.Hubs
             await Clients.All.SendAsync("newMessage", message);
         }
 
-        public async Task NewStroke(DrawingCoordinates coordinates)
+        public async Task DrawStroke(StrokeTool strokeTool)
         {
-            await Clients.Others.SendAsync("newStroke", coordinates);
+            await Clients.Others.SendAsync("drawStroke", strokeTool);
+        }
+
+        public async Task StartNewStroke(StrokeStartingCoordinates startingCoordinates)
+        {
+            await Clients.Others.SendAsync("startNewStroke", startingCoordinates);
         }
     }
 }
