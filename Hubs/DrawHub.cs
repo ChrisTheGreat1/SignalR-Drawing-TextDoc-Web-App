@@ -1,39 +1,39 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using System.Drawing;
 using static DrawingApp.Hubs.DrawingObjects;
 
 namespace DrawingApp.Hubs
 {
     public class DrawHub : Hub
     {
-        public async Task DrawStroke(StrokeTool strokeTool)
+        public async Task DrawClientStroke(StrokeTool strokeTool)
         {
-            await Clients.Others.SendAsync("drawStroke", strokeTool);
+            await Clients.Others.SendAsync("drawClientStroke", strokeTool);
         }
 
-        public async Task InitializeNewStroke(InitializeNewStrokeObject newStrokeObject)
+        public async Task InitializeNewClientStroke(NewStrokeObject newStrokeObject)
         {
-            await Clients.Others.SendAsync("initializeNewStroke", newStrokeObject);
+            await Clients.Others.SendAsync("initializeNewClientStroke", newStrokeObject);
         }
 
-        // TODO: delete?
-        public async Task StartNewStroke(StrokeStartingCoordinates startingCoordinates)
+        public async Task DrawClientCircle(Circle circle)
         {
-            await Clients.Others.SendAsync("startNewStroke", startingCoordinates);
+            await Clients.Others.SendAsync("drawClientCircle", circle);
         }
 
-        public async Task DrawCircle(Circle circle)
+        public async Task DrawClientRectangle(DrawingObjects.Rectangle rectangle)
         {
-            await Clients.Others.SendAsync("drawCircle", circle);
+            await Clients.Others.SendAsync("drawClientRectangle", rectangle);
         }
 
-        public async Task SendMessage(string user, string message)
+        public async Task DrawClientTriangle(Triangle triangle)
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
+            await Clients.Others.SendAsync("drawClientTriangle", triangle);
         }
 
-        public async Task Send(string message)
+        public async Task ClearClientCanvas()
         {
-            await Clients.All.SendAsync("newMessage", message);
+            await Clients.Others.SendAsync("clearClientCanvas");
         }
     }
 }

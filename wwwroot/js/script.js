@@ -2,17 +2,7 @@
 
 var connection = new signalR.HubConnectionBuilder().withUrl("/drawHub").withAutomaticReconnect().build();
 
-connection.on("newMessage", console.log);
-
-//connection.on("startNewStroke", (startingCoordinates) => {
-//    //console.log("new coordinates received");
-//    //console.dir(startingCoordinates);
-
-//    ctx.beginPath();
-//    ctx.moveTo(startingCoordinates.StartPosX, startingCoordinates.StartPosY);
-//});
-
-connection.on("initializeNewStroke", (newStrokeObject) => {
+connection.on("initializeNewClientStroke", (newStrokeObject) => {
     ctx.beginPath();
     ctx.lineWidth = newStrokeObject.LineWidth;
     ctx.strokeStyle = newStrokeObject.StrokeStyle;
@@ -21,33 +11,43 @@ connection.on("initializeNewStroke", (newStrokeObject) => {
     snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height); 
 });
 
-connection.on("drawStroke", (strokeTool) => {
+connection.on("drawClientStroke", (strokeTool) => {
     ctx.putImageData(snapshot, 0, 0); 
-
-    //console.dir(strokeTool);
-
-    //ctx.beginPath();
-
-    //ctx.lineWidth = strokeTool.LineWidth;
     ctx.strokeStyle = strokeTool.StrokeStyle;
-    //ctx.fillStyle = strokeTool.FillStyle;
-
     ctx.lineTo(strokeTool.MousePosX, strokeTool.MousePosY); 
     ctx.stroke(); 
-
-    //ctx.closePath();
-
 })
 
-connection.on("drawCircle", (circle) => {
-    ctx.putImageData(snapshot, 0, 0); // adding copied canvas data on to this canvas
-
-    //console.dir(circle);
-
-    ctx.beginPath(); // creating new path to draw circle
+connection.on("drawClientCircle", (circle) => {
+    ctx.putImageData(snapshot, 0, 0); 
+    ctx.beginPath(); 
     let radius = circle.Radius;
-    ctx.arc(circle.MousePreviousPosX, circle.MousePreviousPosY, radius, 0, 2 * Math.PI); // creating circle according to the mouse pointer
-    circle.FillColor ? ctx.fill() : ctx.stroke(); // if fillColor is checked fill circle else draw border circle
+    ctx.arc(circle.MousePreviousPosX, circle.MousePreviousPosY, radius, 0, 2 * Math.PI); 
+    circle.FillColor ? ctx.fill() : ctx.stroke();
+})
+
+connection.on("drawClientRectangle", (rectangle) => {
+    ctx.putImageData(snapshot, 0, 0); 
+
+    if (!rectangle.FillColor) {
+        return ctx.strokeRect(rectangle.MousePosX, rectangle.MousePosY, rectangle.Width, rectangle.Height);
+    }
+    ctx.fillRect(rectangle.MousePosX, rectangle.MousePosY, rectangle.Width, rectangle.Height);
+})
+
+connection.on("drawClientTriangle", (triangle) => {
+    ctx.putImageData(snapshot, 0, 0); 
+    ctx.beginPath();
+    ctx.moveTo(triangle.MousePreviousPosX, triangle.MousePreviousPosY); 
+    ctx.lineTo(triangle.MousePosX, triangle.MousePosY); 
+    ctx.lineTo(triangle.MousePreviousPosX * 2 - triangle.MousePosX, triangle.MousePosY); 
+    ctx.closePath(); 
+    triangle.FillColor ? ctx.fill() : ctx.stroke(); 
+})
+
+connection.on("clearClientCanvas", () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setCanvasBackground();
 })
 
 connection.start().catch(err => console.error(err.toString()));
@@ -63,7 +63,7 @@ saveImg = document.querySelector(".save-img"),
 ctx = canvas.getContext("2d");
 
 // global variables with default value
-let prevMouseX, prevMouseY, snapshot, clientPrevMouseX, clientPrevMouseY, mouseX, mouseY,
+let prevMouseX, prevMouseY, snapshot,
 isDrawing = false,
 selectedTool = "brush",
 brushWidth = 5,
@@ -84,9 +84,17 @@ window.addEventListener("load", () => {
 });
 
 const drawRect = (e) => {
+    let rectangle = {
+        MousePosX: e.offsetX,
+        MousePosY: e.offsetY,
+        Width: prevMouseX - e.offsetX,
+        Height: prevMouseY - e.offsetY,
+        FillColor: fillColor.checked
+    }
+    connection.invoke("DrawClientRectangle", rectangle);
+
     // if fillColor isn't checked draw a rect with border else draw rect with background
-    if(!fillColor.checked) {
-        // creating circle according to the mouse pointer
+    if (!fillColor.checked) {
         return ctx.strokeRect(e.offsetX, e.offsetY, prevMouseX - e.offsetX, prevMouseY - e.offsetY);
     }
     ctx.fillRect(e.offsetX, e.offsetY, prevMouseX - e.offsetX, prevMouseY - e.offsetY);
@@ -105,8 +113,7 @@ const drawCircle = (e) => {
         Radius: radius,
         FillColor: fillColor.checked
     }
-
-    connection.invoke("DrawCircle", circle);
+    connection.invoke("DrawClientCircle", circle);
 }
 
 const drawTriangle = (e) => {
@@ -116,14 +123,21 @@ const drawTriangle = (e) => {
     ctx.lineTo(prevMouseX * 2 - e.offsetX, e.offsetY); // creating bottom line of triangle
     ctx.closePath(); // closing path of a triangle so the third line draw automatically
     fillColor.checked ? ctx.fill() : ctx.stroke(); // if fillColor is checked fill triangle else draw border
+
+    let triangle = {
+        MousePosX: e.offsetX,
+        MousePosY: e.offsetY,
+        MousePreviousPosX: prevMouseX,
+        MousePreviousPosY: prevMouseY,
+        FillColor: fillColor.checked
+    }
+    connection.invoke("DrawClientTriangle", triangle);
 }
 
 const startDraw = (e) => {
     isDrawing = true;
     prevMouseX = e.offsetX; // passing current mouseX position as prevMouseX value
     prevMouseY = e.offsetY; // passing current mouseY position as prevMouseY value
-    //clientPrevMouseX = e.offsetX;
-    //clientPrevMouseY = e.offsetY;
     ctx.beginPath(); // creating new path to draw
     ctx.lineWidth = brushWidth; // passing brushSize as line width
     ctx.strokeStyle = selectedColor; // passing selectedColor as stroke style
@@ -138,9 +152,7 @@ const startDraw = (e) => {
         StrokeStyle: ctx.strokeStyle,
         FillStyle: ctx.strokeStyle
     }
-
-    //connection.invoke("StartNewStroke", { StartPosX: e.offsetX, StartPosY: e.offsetY });
-    connection.invoke("InitializeNewStroke", newStrokeObject);
+    connection.invoke("InitializeNewClientStroke", newStrokeObject);
 }
 
 const drawing = (e) => {
@@ -151,43 +163,15 @@ const drawing = (e) => {
         // if selected tool is eraser then set strokeStyle to white 
         // to paint white color on to the existing canvas content else set the stroke color to selected color
         ctx.strokeStyle = selectedTool === "eraser" ? "#fff" : selectedColor;
-
-        //clientPrevMouseX = e.offsetX;
-        //clientPrevMouseY = e.offsetY;
-
-        //mouseX = e.offsetX;
-        //mouseY = e.offsetY;
-
         ctx.lineTo(e.offsetX, e.offsetY); // creating line according to the mouse pointer
-        //ctx.lineTo(mouseX, mouseY);
         ctx.stroke(); // drawing/filling line with color
-
-        //let strokeTool = {
-        //    MousePosX: e.offsetX,
-        //    MousePosY: e.offsetY,
-        //    MousePreviousPosX: clientPrevMouseX,
-        //    MousePreviousPosY: clientPrevMouseY,
-        //    LineWidth: Number(brushWidth),
-        //    StrokeStyle: ctx.strokeStyle,
-        //    FillStyle: ctx.strokeStyle
-        //};
 
         let strokeTool = {
             MousePosX: e.offsetX,
             MousePosY: e.offsetY,
             StrokeStyle: ctx.strokeStyle
         };
-
-        connection.invoke("DrawStroke", strokeTool);
-
-        /*
-        Update previous mouse positions to most recent position, 
-        otherwise line gets drawn across the screen to new starting point
-        */
-        //clientPrevMouseX = e.offsetX;
-        //clientPrevMouseY = e.offsetY;
-        //clientPrevMouseX = mouseX;
-        //clientPrevMouseY = mouseY;
+        connection.invoke("DrawClientStroke", strokeTool);
 
     } else if(selectedTool === "rectangle"){
         drawRect(e);
@@ -228,6 +212,7 @@ colorPicker.addEventListener("change", () => {
 clearCanvas.addEventListener("click", () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // clearing whole canvas
     setCanvasBackground();
+    connection.invoke("ClearClientCanvas");
 });
 
 saveImg.addEventListener("click", () => {
