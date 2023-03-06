@@ -4,6 +4,7 @@ namespace DrawingApp
 {
     public class Program
     {
+        // TODO: rename script.js to something with draw in name
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +36,7 @@ namespace DrawingApp
             app.MapRazorPages();
 
             app.MapHub<DrawHub>("/drawHub");
+            app.MapHub<TextDocumentHub>("/textDocHub");
 
             app.Run();
         }
