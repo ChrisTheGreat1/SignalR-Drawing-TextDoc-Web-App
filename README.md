@@ -1,4 +1,4 @@
-# SignalR Drawing & Text Document Web-App
+# SignalR Drawing & Text Document Web App
 
 This is a simple web app created with ASP.NET Core Razor pages and SignalR that allows users to collaboratively use a drawing canvas and text area with real-time updates. 
 
