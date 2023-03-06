@@ -36,7 +36,6 @@ namespace DrawingApp
             app.MapRazorPages();
 
             app.MapHub<DrawHub>("/drawHub");
-            app.MapHub<TextDocumentHub>("/textDocHub");
 
             app.Run();
         }

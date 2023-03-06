@@ -50,8 +50,13 @@ connection.on("clearClientCanvas", () => {
     setCanvasBackground();
 })
 
+connection.on("updateText", (textContents) => {
+    textDoc.value = textContents;
+})
+
 connection.start().catch(err => console.error(err.toString()));
 
+const textDoc = document.getElementById("textDocument");
 const canvas = document.querySelector("canvas"),
 toolBtns = document.querySelectorAll(".tool"),
 fillColor = document.querySelector("#fill-color"),
@@ -221,6 +226,12 @@ saveImg.addEventListener("click", () => {
     link.href = canvas.toDataURL(); // passing canvasData as link href value
     link.click(); // clicking link to download image
 });
+
+textDoc.addEventListener("input", () => {
+    let textContents = textDoc.value;
+    console.log(textContents);
+    connection.invoke("UpdateText", textContents);
+})
 
 canvas.addEventListener("mousedown", startDraw);
 canvas.addEventListener("mousemove", drawing);

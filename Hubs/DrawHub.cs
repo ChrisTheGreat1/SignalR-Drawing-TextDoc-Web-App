@@ -35,5 +35,10 @@ namespace DrawingApp.Hubs
         {
             await Clients.Others.SendAsync("clearClientCanvas");
         }
+
+        public async Task UpdateText(string textContents)
+        {
+            await Clients.All.SendAsync("updateText", textContents);
+        }
     }
 }
