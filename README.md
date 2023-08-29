@@ -2,6 +2,8 @@
 
 This is a simple web app created with ASP.NET Core Razor pages and SignalR that allows users to collaboratively use a drawing canvas and text area with real-time updates. 
 
+![Web app screen recording](screen-recording.gif)
+
 All of the SignalR implementations were completed by myself. Credit for the drawing app core features goes to CodingNepal. The original source code that the web page is based off of can be found [here](https://www.codingnepalweb.com/build-drawing-app-html-canvas-javascript/). The only difference is the textarea element and SignalR features that I added in.
 
 This web app can also be downloaded and ran via Docker:
